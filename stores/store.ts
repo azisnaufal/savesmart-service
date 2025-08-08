@@ -24,9 +24,13 @@ export const get = api(
       p_offset: (p.page - 1) * p.pageSize
     });
 
-    const online_stores = await supabase.from("stores")
-      .select("*")
-      .eq("is_online", true)
+    console.log("Nearby stores fetched:", nearby_stores);
+
+    const online_stores = await supabase
+      .from("stores")
+      .select("id, name, photo, long, lat, online_link")
+      .not("online_link", "is", null)
+      .neq("online_link", "")
       .range((p.page - 1) * p.pageSize, p.page * p.pageSize - 1)
       .order("created_at", { ascending: false });
 

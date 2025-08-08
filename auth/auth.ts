@@ -11,6 +11,7 @@ import { supabase } from "../supabase/supabase";
 interface AuthenticationParameters {
   /** The Authorization header containing the bearer token. */
   authorization: Header<"Authorization">;
+  refreshToken: Header<"X-Refresh-Token">;
 }
 
 /**
@@ -52,6 +53,16 @@ class SupabaseAuthenticationService {
     if (!user) throw APIError.unauthenticated("Invalid token");
     return user;
   }
+
+  async setSession(token: string, refreshToken: string) {
+    const { data, error } = await this.supabaseClient.auth.setSession({
+      access_token: token,
+      refresh_token: refreshToken,
+    });
+    if (error) throw error;
+    if (!data) throw APIError.notFound("Session not found");
+    return data;
+  }
 }
 
 /**
@@ -92,6 +103,7 @@ const supabaseAuthHandler: AuthHandler<
 
     try {
       const user = await authenticationService.getUserByToken(token);
+      await authenticationService.setSession(token, params.refreshToken);
       return AuthenticatedUserDataMapper.mapFromSupabaseUser(user);
     } catch (error) {
       log.error(error);
